@@ -1,3 +1,5 @@
+import random
+
 class Dispatcher:
     """
     Agent dispatcher (admin/tim).
@@ -6,40 +8,94 @@ class Dispatcher:
     """
 
     def __init__(self, dispatcher_id, drivers):
-        # ID tim (Team1, Team2)
-        self.dispatcher_id = dispatcher_id
-        # List driver di tim ini
-        self.drivers = drivers
-        # Log seluruh order yang dimenangkan tim ini
-        self.order_log = []
+        self.dispatcher_id = dispatcher_id  # ID tim (Team1, Team2)
+        self.drivers = drivers              # List driver di tim ini
+        self.order_log = []                 # Log seluruh order yang dimenangkan tim ini
 
     def koordinasi_order(self, order):
         """
-        Proses:
-        1. Dispatcher menerima order dan mengumumkan ke driver di timnya
+        Proses koordinasi:
+        1. Dispatcher menerima order dan broadcast ke drivernya
         2. Semua driver melakukan bid (skor_penawaran)
-        3. Driver dengan skor terkecil di tim ini dipilih
-        4. Driver tersebut assign order (beban bertambah)
-        5. Log order tim diperbarui
+        3. Jika satu pemenang → assign langsung
+        4. Jika dua driver punya skor identik → tie-breaker internal
+        5. Assign driver, update beban, dan catat log
         """
         print(f"[Dispatcher {self.dispatcher_id}] menerima order {order.order_id}")
         bids = []
+
         for driver in self.drivers:
             bid = driver.bid(order.location)
             bids.append(bid)
             print(f"  Driver {driver.driver_id} skor_penawaran: {bid[0]:.2f} (Jarak: {bid[2]}, Beban: {bid[3]}, Waktu: {bid[4]})")
-        # Pilih driver dengan skor terkecil di tim ini
-        winner = min(bids, key=lambda x: x[0])
-        # Assign order ke driver yang menang (beban bertambah di class Driver)
-        winner[1].assign_order(winner[0], winner[4], order.order_id, winner[2])
-        # Catat log di dispatcher (untuk statistik tim)
+
+        # Ambil skor terkecil
+        min_skor = min(bids, key=lambda x: x[0])[0]
+        kandidat = [bid for bid in bids if bid[0] == min_skor]
+
+        if len(kandidat) > 1:
+            print(f"  [Tie-breaker internal] {len(kandidat)} driver memiliki skor identik.")
+
+            attempt = 1
+            MAX_ATTEMPT = 5  # batas maksimal bid ulang
+            prev_scores = None  # simpan skor sebelumnya
+
+            while True:
+                print(f"    [Bid ulang #{attempt}]")
+                tie_bids = []
+                for bid in kandidat:
+                    driver = bid[1]
+                    # Hitung ulang jarak dan waktu respon berdasarkan lokasi order
+                    jarak, waktu_respon = driver.hitung_jarak_dan_waktu(order.location)
+                    
+                    # Simulasikan pengurangan beban tiap bid ulang
+                    simulated_beban = max(0, driver.beban - attempt)
+
+                    # Hitung skor baru
+                    new_skor = 0.6 * jarak + 0.3 * simulated_beban + 0.1 * waktu_respon
+
+                    tie_bids.append((new_skor, driver, jarak, simulated_beban, waktu_respon))
+                    print(f"      Driver {driver.driver_id} bid ulang dengan skor: {new_skor:.2f} (jarak: {jarak}, waktu: {waktu_respon}, beban dikurangi jadi {simulated_beban})")
+
+                skor_list = [t[0] for t in tie_bids]
+
+                # Jika skor stagnan dan semua beban sudah minimum, pilih random
+                if prev_scores == skor_list and all(t[3] == 0 for t in tie_bids):
+                    print("    Skor tidak berubah dan semua beban minimum. Driver dipilih secara acak.\n")
+                    winner = random.choice(tie_bids)
+                    break
+
+                prev_scores = skor_list
+
+                # Jika mencapai batas maksimal bid ulang, pilih random
+                if attempt >= MAX_ATTEMPT:
+                    print(f"    Mencapai batas maksimal bid ulang ({MAX_ATTEMPT}). Driver dipilih secara acak.\n")
+                    winner = random.choice(tie_bids)
+                    break
+
+                # Jika skor sudah berbeda, keluar dari loop
+                if len(set(skor_list)) > 1:
+                    break
+
+                attempt += 1
+
+            if 'winner' not in locals():
+                winner = min(tie_bids, key=lambda x: x[0])
+        else:
+            winner = kandidat[0]
+
+
+        driver = winner[1]
+        driver.assign_order(winner[0], winner[4], order.order_id, winner[2])
+
         self.order_log.append({
             "order_id": order.order_id,
-            "driver_id": winner[1].driver_id,
+            "driver_id": driver.driver_id,
             "skor": winner[0],
             "jarak": winner[2],
-            "beban": winner[1].beban,
+            "beban": driver.beban,
             "waktu_respon": winner[4]
         })
-        print(f"  ==> Order {order.order_id} diberikan ke Driver {winner[1].driver_id} (skor: {winner[0]:.2f})\n")
+
+        print(f"  ==> Order {order.order_id} diberikan ke Driver {driver.driver_id} (skor: {winner[0]:.2f})\n")
         return winner

@@ -38,6 +38,16 @@ class Driver:
         skor_penawaran = 0.6 * jarak + 0.3 * beban + 0.1 * waktu_respon
         """
         return 0.6 * jarak + 0.3 * self.beban + 0.1 * waktu_respon
+    
+    def hitung_jarak_dan_waktu(self, order_location):
+        """
+        Simulasi perhitungan ulang jarak dan waktu respon.
+        Dipakai saat tie-breaker (bidding ulang).
+        """
+        jarak = random.randint(1, 10)
+        waktu_respon = random.randint(1, 5)
+        return jarak, waktu_respon
+
 
     def assign_order(self, skor, waktu_respon, order_id, jarak):
         """
