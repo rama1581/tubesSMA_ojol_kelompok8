@@ -2,12 +2,12 @@ from collections import Counter
 
 def evaluasi_tim(dispatcher, nama_tim):
     """
-    Fungsi evaluasi performa tim (dispatcher).
-    Menampilkan:
-      - total order didapat
-      - rata-rata skor penawaran
-      - rata-rata waktu respon
-      - order-log detail per order
+    Mengevaluasi performa tim (dispatcher).
+    Output:
+      - Total order yang didapat
+      - Rata-rata skor penawaran
+      - Rata-rata waktu respon
+      - Detail log order
     """
     total_order = len(dispatcher.order_log)
     if total_order == 0:
@@ -25,11 +25,11 @@ def evaluasi_tim(dispatcher, nama_tim):
 
 def statistik_driver(drivers):
     """
-    Menampilkan statistik lengkap tiap driver:
-      - total order didapat
-      - rata-rata skor penawaran
-      - rata-rata waktu respon
-      - detail log order
+    Output statistik lengkap tiap driver:
+      - Total order didapat
+      - Rata-rata skor penawaran
+      - Rata-rata waktu respon
+      - Detail log order
     """
     for driver in drivers:
         if driver.total_order == 0:
@@ -48,10 +48,10 @@ def statistik_driver(drivers):
 
 def analisis_global(results, drivers):
     """
-    Analisis statistik global seluruh simulasi.
+    Statistik global simulasi:
     - Persentase kemenangan tim
     - Driver paling efisien (skor rata-rata terendah)
-    - Order terbanyak per driver
+    - Driver terbanyak menang order
     """
     print("=== Statistik Global ===")
     team_count = Counter([r[1] for r in results])
