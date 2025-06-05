@@ -59,7 +59,12 @@ for i in range(1, 2):
                 prev_jarak = bid[2]
                 prev_beban = bid[3]
                 prev_waktu_respon = bid[4]
-                simulated_beban = max(0, prev_beban - attempt)
+                # simulated_beban = max(0, prev_beban - attempt)  # Simulasi pengurangan beban kalo maximal
+                if prev_beban > 0:
+                        pengurang = random.randint(1, prev_beban)
+                else:
+                        pengurang = 0
+                        simulated_beban = max(0, prev_beban - pengurang)
                 new_skor = 0.6 * prev_jarak + 0.3 * simulated_beban + 0.1 * prev_waktu_respon
                 tie_bids.append((new_skor, driver, prev_jarak, simulated_beban, prev_waktu_respon))
                 print(f"      Driver {driver.driver_id} bid ulang global dengan skor: {new_skor:.2f} (jarak: {prev_jarak}, waktu: {prev_waktu_respon}, beban dikurangi jadi {simulated_beban})")
