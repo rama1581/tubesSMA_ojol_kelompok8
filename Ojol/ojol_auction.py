@@ -16,7 +16,7 @@ dispatcher2 = Dispatcher('Team2', drivers_team2)
 
 results = []
 
-# --- SIMULASI 5 ORDER: SEMUA DRIVER SAMA ---
+# --- SIMULASI 3 ORDER: SEMUA DRIVER SAMA ---
 def bid_sama(self, order_location):
     jarak = 7
     waktu_respon = 3
@@ -31,7 +31,7 @@ for driver in all_drivers:
     driver.bid = bid_sama.__get__(driver, Driver)
     driver.beban = 5
 
-print("\n=== SIMULASI 5 ORDER (SEMUA DRIVER SAMA) ===\n")
+print("\n=== SIMULASI 3 ORDER (SEMUA DRIVER SAMA) ===\n")
 for i in range(1, 2):
     order = Order(f"O_SIM_{i}", random.randint(1, 20))
     print(f"--- ORDER {order.order_id} ---")
