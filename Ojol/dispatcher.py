@@ -1,4 +1,4 @@
-import random
+import random  # Import modul random untuk simulasi pengacakan beban
 
 class Dispatcher:
     """
@@ -24,17 +24,17 @@ class Dispatcher:
            Jika setelah beberapa kali bid ulang tetap tie, pemenang dipilih secara acak.
         5. Setelah pemenang bidding didapat, assign order ke driver, update beban dan catat log.
         """
-        print(f"[Dispatcher {self.dispatcher_id}] menerima order {order.order_id}")
-        bids = []
+        print(f"[Dispatcher {self.dispatcher_id}] menerima order {order.order_id}")  # Cetak info penerimaan order oleh dispatcher
+        bids = []  # List untuk menampung hasil bid driver
 
         # 1. Setiap driver melakukan bid terhadap order ini
         for driver in self.drivers:
-            bid = driver.bid(order.location)
-            bids.append(bid)
+            bid = driver.bid(order.location)  # Driver melakukan bid untuk order ini
+            bids.append(bid)  # Simpan hasil bid
             print(f"  Driver {driver.driver_id} skor_penawaran: {bid[0]:.2f} (Jarak: {bid[2]}, Beban: {bid[3]}, Waktu: {bid[4]})")
 
         # 2. Cari skor penawaran terkecil di antara semua driver
-        min_skor = min(bids, key=lambda x: x[0])[0]
+        min_skor = min(bids, key=lambda x: x[0])[0]  # Ambil nilai skor terkecil dari semua bid
         kandidat = [bid for bid in bids if bid[0] == min_skor]  # List kandidat pemenang (bisa 1 atau lebih)
 
         # 3. Jika terjadi tie (lebih dari satu driver dengan skor sama), lakukan bid ulang/tie-breaker
@@ -47,20 +47,19 @@ class Dispatcher:
 
             while True:
                 print(f"    [Bid ulang #{attempt}]")
-                tie_bids = []
+                tie_bids = []  # List untuk hasil bid ulang
                 for bid in kandidat:
-                    driver = bid[1]
-                    # Ambil JARAK dan WAKTU dari bid awal, TIDAK random di bid ulang!
-                    prev_jarak = bid[2]
-                    prev_beban = bid[3]
-                    prev_waktu_respon = bid[4]
+                    driver = bid[1]              # Ambil objek driver dari bid
+                    prev_jarak = bid[2]          # Ambil jarak dari bid awal (TETAP)
+                    prev_beban = bid[3]          # Ambil beban dari bid awal
+                    prev_waktu_respon = bid[4]   # Ambil waktu respon dari bid awal (TETAP)
 
                     # Pengurangan beban secara acak pada tiap bid ulang, minimal 1, maksimal sisa beban
                     if prev_beban > 0:
                         pengurang = random.randint(1, prev_beban)
                     else:
                         pengurang = 0
-                    simulated_beban = max(0, prev_beban - pengurang)
+                    simulated_beban = max(0, prev_beban - pengurang)  # Pastikan tidak negatif
 
                     # Skor baru dihitung dengan beban terbaru, jarak dan waktu tetap dari bid awal
                     new_skor = 0.6 * prev_jarak + 0.3 * simulated_beban + 0.1 * prev_waktu_respon
@@ -69,10 +68,10 @@ class Dispatcher:
                     print(f"      Driver {driver.driver_id} bid ulang dengan skor: {new_skor:.2f} (jarak: {prev_jarak}, waktu: {prev_waktu_respon}, beban awal: {prev_beban}, pengurang: {pengurang}, sisa beban: {simulated_beban})")
 
                 # 4. Cek apakah skor stagnan & semua beban sudah minimum (0)
-                skor_list = [t[0] for t in tie_bids]
+                skor_list = [t[0] for t in tie_bids]  # Ambil semua skor bid ulang
                 if prev_scores == skor_list and all(t[3] == 0 for t in tie_bids):
                     print("    Skor tidak berubah dan semua beban minimum. Driver dipilih secara acak.\n")
-                    winner = random.choice(tie_bids)
+                    winner = random.choice(tie_bids)  # Pilih pemenang secara acak
                     break
 
                 prev_scores = skor_list
@@ -110,4 +109,5 @@ class Dispatcher:
         })
 
         print(f"  ==> Order {order.order_id} diberikan ke Driver {driver.driver_id} (skor: {winner[0]:.2f})\n")
-        return winner
+        return winner  # Return hasil pemenang bidding
+
