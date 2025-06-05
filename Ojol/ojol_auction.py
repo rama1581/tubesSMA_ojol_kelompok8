@@ -31,32 +31,45 @@ for i in range(1, 11):
         chosen = winner2
         team = dispatcher2.dispatcher_id
     else:
+        # === GLOBAL TIE-BREAKER ===
         print("  [Tie-breaker Global] Skor identik, masuk fase bid ulang...")
-        all_candidates = [winner1[1], winner2[1]]
-        tie_bids = []
+        all_candidates = [winner1, winner2]
+        attempt = 1
+        MAX_ATTEMPT = 5
+        prev_scores = None
 
-        bid_count = 0
         while True:
-            tie_bids.clear()
-            bid_count += 1
-            print(f"    [Bid ulang #{bid_count}]")
-            for driver in all_candidates:
-                simulated_beban = max(0, driver.beban - 1)
-                jarak = 5
-                waktu_respon = 5
-                skor = 0.6 * jarak + 0.3 * simulated_beban + 0.1 * waktu_respon
-                tie_bids.append((skor, driver))
-                print(f"      Driver {driver.driver_id} bid ulang dengan skor: {skor:.2f} (beban dikurangi jadi {simulated_beban})")
-            
-            min_score = min(tie_bids, key=lambda x: x[0])[0]
-            best_bidders = [tb for tb in tie_bids if tb[0] == min_score]
-            if len(best_bidders) == 1:
-                chosen = best_bidders[0]
+            print(f"    [Bid ulang Global #{attempt}]")
+            tie_bids = []
+            for bid in all_candidates:
+                driver = bid[1]
+                prev_jarak = bid[2]
+                prev_beban = bid[3]
+                prev_waktu_respon = bid[4]
+                simulated_beban = max(0, prev_beban - attempt)
+                new_skor = 0.6 * prev_jarak + 0.3 * simulated_beban + 0.1 * prev_waktu_respon
+                tie_bids.append((new_skor, driver, prev_jarak, simulated_beban, prev_waktu_respon))
+                print(f"      Driver {driver.driver_id} bid ulang global dengan skor: {new_skor:.2f} (jarak: {prev_jarak}, waktu: {prev_waktu_respon}, beban dikurangi jadi {simulated_beban})")
+
+            skor_list = [t[0] for t in tie_bids]
+
+            if prev_scores == skor_list and all(t[3] == 0 for t in tie_bids):
+                print("    Skor tidak berubah dan semua beban minimum. Driver dipilih secara acak.\n")
+                chosen = random.choice(tie_bids)
                 break
-            elif all(b[1].beban == 0 for b in best_bidders):
-                chosen = random.choice(best_bidders)
-                print("    [Dipilih secara acak karena skor & beban identik]")
+
+            prev_scores = skor_list
+
+            if attempt >= MAX_ATTEMPT:
+                print(f"    Mencapai batas maksimal bid ulang ({MAX_ATTEMPT}). Driver dipilih secara acak.\n")
+                chosen = random.choice(tie_bids)
                 break
+
+            if len(set(skor_list)) > 1:
+                chosen = min(tie_bids, key=lambda x: x[0])
+                break
+
+            attempt += 1
 
         team = dispatcher1.dispatcher_id if chosen[1] in dispatcher1.drivers else dispatcher2.dispatcher_id
         print(f"  ==> Driver {chosen[1].driver_id} menang setelah bid ulang (skor: {chosen[0]:.2f})\n")
@@ -82,17 +95,6 @@ for i in range(11, 16):
 # SIMULASI GLOBAL TIE-BREAKER (2 Dispatcher, hasil sama)
 print("\n=== SIMULASI 5 ORDER GLOBAL TIE-BREAKER (Skor Identik antar Dispatcher) ===\n")
 
-# Pakai override bid agar hasil fix sama (simulasi)
-original_bid = Driver.bid
-def fixed_bid(self, order_location):
-    jarak = 5
-    waktu_respon = 5
-    skor = 0.6 * jarak + 0.3 * 5 + 0.1 * waktu_respon  # skor = 5.0
-    return skor, self, jarak, 5, waktu_respon
-
-for driver in all_drivers:
-    driver.bid = fixed_bid.__get__(driver, Driver)
-
 for i in range(16, 21):
     order = Order(f"O{i}", 10)
     print(f"--- ORDER {order.order_id} ---")
@@ -106,41 +108,51 @@ for i in range(16, 21):
         chosen = winner2
         team = dispatcher2.dispatcher_id
     else:
+        # **BID AWAL RANDOM, BID ULANG AMBIL DARI BID AWAL**
         print("  [Tie-breaker Global] Skor identik, masuk fase bid ulang...")
-        all_candidates = [winner1[1], winner2[1]]
-        tie_bids = []
-        bid_count = 0
-        while True:
-            tie_bids.clear()
-            bid_count += 1
-            print(f"    [Bid ulang #{bid_count}]")
-            for driver in all_candidates:
-                simulated_beban = max(0, driver.beban - 1)
-                jarak = 5
-                waktu_respon = 5
-                skor = 0.6 * jarak + 0.3 * simulated_beban + 0.1 * waktu_respon
-                tie_bids.append((skor, driver))
-                print(f"      Driver {driver.driver_id} bid ulang dengan skor: {skor:.2f} (beban dikurangi jadi {simulated_beban})")
+        all_candidates = [winner1, winner2]
+        attempt = 1
+        MAX_ATTEMPT = 5
+        prev_scores = None
 
-            min_score = min(tie_bids, key=lambda x: x[0])[0]
-            best_bidders = [tb for tb in tie_bids if tb[0] == min_score]
-            if len(best_bidders) == 1:
-                chosen = best_bidders[0]
+        while True:
+            print(f"    [Bid ulang Global #{attempt}]")
+            tie_bids = []
+            for bid in all_candidates:
+                driver = bid[1]
+                prev_jarak = bid[2]
+                prev_beban = bid[3]
+                prev_waktu_respon = bid[4]
+                simulated_beban = max(0, prev_beban - attempt)
+                new_skor = 0.6 * prev_jarak + 0.3 * simulated_beban + 0.1 * prev_waktu_respon
+                tie_bids.append((new_skor, driver, prev_jarak, simulated_beban, prev_waktu_respon))
+                print(f"      Driver {driver.driver_id} bid ulang global dengan skor: {new_skor:.2f} (jarak: {prev_jarak}, waktu: {prev_waktu_respon}, beban dikurangi jadi {simulated_beban})")
+
+            skor_list = [t[0] for t in tie_bids]
+
+            if prev_scores == skor_list and all(t[3] == 0 for t in tie_bids):
+                print("    Skor tidak berubah dan semua beban minimum. Driver dipilih secara acak.\n")
+                chosen = random.choice(tie_bids)
                 break
-            elif all(b[1].beban == 0 for b in best_bidders):
-                chosen = random.choice(best_bidders)
-                print("    [Dipilih secara acak karena skor & beban identik]")
+
+            prev_scores = skor_list
+
+            if attempt >= MAX_ATTEMPT:
+                print(f"    Mencapai batas maksimal bid ulang ({MAX_ATTEMPT}). Driver dipilih secara acak.\n")
+                chosen = random.choice(tie_bids)
                 break
+
+            if len(set(skor_list)) > 1:
+                chosen = min(tie_bids, key=lambda x: x[0])
+                break
+
+            attempt += 1
 
         team = dispatcher1.dispatcher_id if chosen[1] in dispatcher1.drivers else dispatcher2.dispatcher_id
         print(f"  ==> Driver {chosen[1].driver_id} menang setelah bid ulang (skor: {chosen[0]:.2f})\n")
 
     print(f"*** Order {order.order_id} dimenangkan oleh {chosen[1].driver_id} dari {team} (skor: {chosen[0]:.2f})\n")
     results.append((order.order_id, team, chosen[1].driver_id, chosen[0]))
-
-# Kembalikan fungsi bid asli
-for driver in all_drivers:
-    driver.bid = original_bid.__get__(driver, Driver)
 
 # Rekap distribusi order per tim
 print("\n=== Distribusi order antar tim ===")

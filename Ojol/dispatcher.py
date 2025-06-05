@@ -45,17 +45,19 @@ class Dispatcher:
                 tie_bids = []
                 for bid in kandidat:
                     driver = bid[1]
-                    # Hitung ulang jarak dan waktu respon berdasarkan lokasi order
-                    jarak, waktu_respon = driver.hitung_jarak_dan_waktu(order.location)
-                    
+                    # Ambil JARAK dan WAKTU dari bid awal! (bukan random)
+                    prev_jarak = bid[2]
+                    prev_beban = bid[3]
+                    prev_waktu_respon = bid[4]
+
                     # Simulasikan pengurangan beban tiap bid ulang
-                    simulated_beban = max(0, driver.beban - attempt)
+                    simulated_beban = max(0, prev_beban - attempt)
 
-                    # Hitung skor baru
-                    new_skor = 0.6 * jarak + 0.3 * simulated_beban + 0.1 * waktu_respon
+                    # Hitung skor baru (jarak dan waktu tetap, beban berkurang)
+                    new_skor = 0.6 * prev_jarak + 0.3 * simulated_beban + 0.1 * prev_waktu_respon
 
-                    tie_bids.append((new_skor, driver, jarak, simulated_beban, waktu_respon))
-                    print(f"      Driver {driver.driver_id} bid ulang dengan skor: {new_skor:.2f} (jarak: {jarak}, waktu: {waktu_respon}, beban dikurangi jadi {simulated_beban})")
+                    tie_bids.append((new_skor, driver, prev_jarak, simulated_beban, prev_waktu_respon))
+                    print(f"      Driver {driver.driver_id} bid ulang dengan skor: {new_skor:.2f} (jarak: {prev_jarak}, waktu: {prev_waktu_respon}, beban dikurangi jadi {simulated_beban})")
 
                 skor_list = [t[0] for t in tie_bids]
 
@@ -83,7 +85,6 @@ class Dispatcher:
                 winner = min(tie_bids, key=lambda x: x[0])
         else:
             winner = kandidat[0]
-
 
         driver = winner[1]
         driver.assign_order(winner[0], winner[4], order.order_id, winner[2])
